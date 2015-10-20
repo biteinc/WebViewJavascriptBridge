@@ -8,6 +8,10 @@
 #import <Foundation/Foundation.h>
 #import "WebViewJavascriptBridgeBase.h"
 
+#ifdef USE_CRASHLYTICS
+    #import <Crashlytics/Answers.h>
+#endif
+
 @implementation WebViewJavascriptBridgeBase {
     id _webViewDelegate;
     long _uniqueId;
@@ -205,7 +209,15 @@ static bool logging = false;
 }
 
 - (NSArray*)_deserializeMessageJSON:(NSString *)messageJSON {
-    return [NSJSONSerialization JSONObjectWithData:[messageJSON dataUsingEncoding:NSUTF8StringEncoding] options:NSJSONReadingAllowFragments error:nil];
+    NSData *data = [messageJSON dataUsingEncoding:NSUTF8StringEncoding];
+    if (data) {
+        return [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:nil];
+    } else {
+#ifdef USE_CRASHLYTICS
+        [Answers logCustomEventWithName:@"empty-js" customAttributes:@{@"message": (messageJSON ?: @"nil message")}];
+#endif
+    }
+    return nil;
 }
 
 - (void)_log:(NSString *)action json:(id)json {
