@@ -208,18 +208,17 @@ static bool logging = false;
     return [[NSString alloc] initWithData:[NSJSONSerialization dataWithJSONObject:message options:0 error:nil] encoding:NSUTF8StringEncoding];
 }
 
-static int count = 0;
 - (NSArray*)_deserializeMessageJSON:(NSString *)messageJSON {
-    NSLog(@"message %@", messageJSON);
-    count++;
     NSData *data = [messageJSON dataUsingEncoding:NSUTF8StringEncoding];
-    if (data && count < 4) {
+    if (data) {
         return [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:nil];
     } else {
+#ifdef USE_CRASHLYTICS
         CLSStackFrame *stackFrame = [CLSStackFrame stackFrameWithAddress:219];
         [[Crashlytics sharedInstance] recordCustomExceptionName:@"empty-js"
-                                                         reason:@"Some reason"
+                                                         reason:[NSString stringWithFormat:@"Message: %@", messageJSON]
                                                      frameArray:@[stackFrame]];
+#endif
     }
     return nil;
 }
