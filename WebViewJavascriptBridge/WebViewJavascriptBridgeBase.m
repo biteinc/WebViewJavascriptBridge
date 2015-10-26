@@ -9,7 +9,7 @@
 #import "WebViewJavascriptBridgeBase.h"
 
 #ifdef USE_CRASHLYTICS
-    #import <Crashlytics/Crashlytics.h>
+    #import <Crashlytics/Answers.h>
 #endif
 
 @implementation WebViewJavascriptBridgeBase {
@@ -214,10 +214,7 @@ static bool logging = false;
         return [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:nil];
     } else {
 #ifdef USE_CRASHLYTICS
-        CLSStackFrame *stackFrame = [CLSStackFrame stackFrameWithAddress:219];
-        [[Crashlytics sharedInstance] recordCustomExceptionName:@"empty-js"
-                                                         reason:[NSString stringWithFormat:@"Message: %@", messageJSON]
-                                                     frameArray:@[stackFrame]];
+        [Answers logCustomEventWithName:@"empty-js" customAttributes:@{@"message": (messageJSON ?: @"nil message")}];
 #endif
     }
     return nil;
