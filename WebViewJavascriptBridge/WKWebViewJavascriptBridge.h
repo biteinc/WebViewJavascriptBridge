@@ -17,6 +17,8 @@
 
 @interface WKWebViewJavascriptBridge : NSObject<WKNavigationDelegate, WebViewJavascriptBridgeBaseDelegate>
 
+@property (nonatomic) NSString *jsVersion;
+
 + (instancetype)bridgeForWebView:(WKWebView*)webView handler:(WVJBHandler)handler;
 + (instancetype)bridgeForWebView:(WKWebView*)webView webViewDelegate:(NSObject<WKNavigationDelegate>*)webViewDelegate handler:(WVJBHandler)handler;
 + (instancetype)bridgeForWebView:(WKWebView*)webView webViewDelegate:(NSObject<WKNavigationDelegate>*)webViewDelegate handler:(WVJBHandler)handler resourceBundle:(NSBundle*)bundle;

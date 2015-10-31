@@ -19,6 +19,7 @@
     id _webViewDelegate;
     long _uniqueId;
     WebViewJavascriptBridgeBase *_base;
+    int _navigationCount;
 }
 
 /* API
@@ -110,6 +111,31 @@
     }];
 }
 
+- (void)setJsVersion:(NSString *)jsVersion {
+    _jsVersion = jsVersion;
+    _navigationCount = 0;
+}
+
+- (void)webView:(WKWebView *)webView didCommitNavigation:(null_unspecified WKNavigation *)navigation {
+    NSLog(@"DID COMMIT NAVIGATION: %@", navigation);
+    if (_navigationCount) {
+#ifdef USE_CRASHLYTICS
+        [Answers logCustomEventWithName:@"bridge-did-commit-navigation"
+                       customAttributes:@{@"webview.URL": webView.URL ?: @"nil url",
+                                          @"navigation": navigation ?: @"nil navigation"}];
+#endif
+    }
+    _navigationCount++;
+}
+
+- (void)webViewWebContentProcessDidTerminate:(WKWebView *)webView {
+    NSLog(@"CONTENT DID TERMINATE");
+#ifdef USE_CRASHLYTICS
+    [Answers logCustomEventWithName:@"bridge-did-terminate"
+                   customAttributes:@{@"webview.URL": webView.URL ?: @"nil url"}];
+#endif
+}
+
 - (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation
 {
     if (webView != _webView) { return; }
@@ -123,7 +149,7 @@
 #ifdef USE_CRASHLYTICS
             if (error) {
                 [Answers logCustomEventWithName:@"bridge-eval-error"
-                               customAttributes:@{@"method:": @"didFinishNavigation",
+                               customAttributes:@{@"method": @"didFinishNavigation",
                                                   @"result": result ?: @"nil result",
                                                   @"error": error.localizedDescription ?: @"nil error",
                                                   @"js": js ?: @"nil js"}];
