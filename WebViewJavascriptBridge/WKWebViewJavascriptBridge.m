@@ -8,6 +8,10 @@
 
 #import "WKWebViewJavascriptBridge.h"
 
+#ifdef USE_CRASHLYTICS
+    #import <Crashlytics/Answers.h>
+#endif
+
 #if defined(supportsWKWebKit)
 
 @implementation WKWebViewJavascriptBridge {
@@ -90,8 +94,19 @@
 
 
 - (void)WKFlushMessageQueue {
-    [_webView evaluateJavaScript:[_base webViewJavascriptFetchQueyCommand] completionHandler:^(NSString* result, NSError* error) {
+    NSLog(@"WKFlushMessageQueue");
+    NSString *js = [_base webViewJavascriptFetchQueyCommand];
+    [_webView evaluateJavaScript:js completionHandler:^(NSString* result, NSError* error) {
         [_base flushMessageQueue:result];
+#ifdef USE_CRASHLYTICS
+        if (error) {
+            [Answers logCustomEventWithName:@"bridge-eval-error"
+                           customAttributes:@{@"method:": @"WKFlushMessageQueue",
+                                              @"result": result ?: @"nil result",
+                                              @"error": error.localizedDescription ?: @"nil error",
+                                              @"js": js ?: @"nil js"}];
+        }
+#endif
     }];
 }
 
@@ -102,8 +117,18 @@
     _base.numRequestsLoading--;
     
     if (_base.numRequestsLoading == 0) {
-        [webView evaluateJavaScript:[_base webViewJavascriptCheckCommand] completionHandler:^(NSString *result, NSError *error) {
+        NSString *js = [_base webViewJavascriptCheckCommand];
+        [webView evaluateJavaScript:js completionHandler:^(NSString *result, NSError *error) {
             [_base injectJavascriptFile:![result boolValue]];
+#ifdef USE_CRASHLYTICS
+            if (error) {
+                [Answers logCustomEventWithName:@"bridge-eval-error"
+                               customAttributes:@{@"method:": @"didFinishNavigation",
+                                                  @"result": result ?: @"nil result",
+                                                  @"error": error.localizedDescription ?: @"nil error",
+                                                  @"js": js ?: @"nil js"}];
+            }
+#endif
         }];
     }
     
@@ -164,7 +189,17 @@ didFailNavigation:(WKNavigation *)navigation
 
 - (NSString*) _evaluateJavascript:(NSString*)javascriptCommand
 {
-    [_webView evaluateJavaScript:javascriptCommand completionHandler:nil];
+    [_webView evaluateJavaScript:javascriptCommand completionHandler:^(NSString *result, NSError *error) {
+#ifdef USE_CRASHLYTICS
+        if (error) {
+            [Answers logCustomEventWithName:@"bridge-eval-error"
+                           customAttributes:@{@"method:": @"_evaluateJavascript",
+                                              @"result": result ?: @"nil result",
+                                              @"error": error.localizedDescription ?: @"nil error",
+                                              @"js": javascriptCommand ?: @"nil js"}];
+        }
+#endif
+    }];
     return NULL;
 }
 
