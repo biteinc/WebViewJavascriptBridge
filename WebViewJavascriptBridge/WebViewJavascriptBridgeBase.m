@@ -69,12 +69,12 @@ static bool logging = false;
 - (void)flushMessageQueue:(NSString *)messageQueueString{
     id messages = [self _deserializeMessageJSON:messageQueueString];
     if (![messages isKindOfClass:[NSArray class]]) {
-        NSLog(@"WebViewJavascriptBridge: WARNING: Invalid %@ received: %@", [messages class], messages);
+        NSLog(@"WebViewJavascriptBridge1: WARNING: Invalid %@ received: %@", [messages class], messages);
         return;
     }
     for (WVJBMessage* message in messages) {
         if (![message isKindOfClass:[WVJBMessage class]]) {
-            NSLog(@"WebViewJavascriptBridge: WARNING: Invalid %@ received: %@", [message class], message);
+            NSLog(@"WebViewJavascriptBridge2: WARNING: Invalid %@ received: %@", [message class], message);
             continue;
         }
         [self _log:@"RCVD" json:message];

@@ -99,15 +99,19 @@
     NSString *js = [_base webViewJavascriptFetchQueyCommand];
     [_webView evaluateJavaScript:js completionHandler:^(NSString* result, NSError* error) {
         [_base flushMessageQueue:result];
-#ifdef USE_CRASHLYTICS
         if (error) {
+            GCNLogError(@"Bridge-Eval-Error L:103!!!\nMethod: WKFlushMessageQueue\nResult: %@\nError: %@\nJS: %@",
+                        result ?: @"nil result",
+                        error.localizedDescription ?: @"nil error",
+                        js ?: @"nil js");
+#ifdef USE_CRASHLYTICS
             [Answers logCustomEventWithName:@"bridge-eval-error"
                            customAttributes:@{@"method:": @"WKFlushMessageQueue",
                                               @"result": result ?: @"nil result",
                                               @"error": error.localizedDescription ?: @"nil error",
                                               @"js": js ?: @"nil js"}];
-        }
 #endif
+        }
     }];
 }
 
@@ -129,7 +133,7 @@
 }
 
 - (void)webViewWebContentProcessDidTerminate:(WKWebView *)webView {
-    NSLog(@"CONTENT DID TERMINATE");
+    NSLog(@"CONTENT DID TERMINATE %@", webView.URL);
 #ifdef USE_CRASHLYTICS
     [Answers logCustomEventWithName:@"bridge-did-terminate"
                    customAttributes:@{@"webview.URL": webView.URL ?: @"nil url"}];
@@ -146,15 +150,19 @@
         NSString *js = [_base webViewJavascriptCheckCommand];
         [webView evaluateJavaScript:js completionHandler:^(NSString *result, NSError *error) {
             [_base injectJavascriptFile:![result boolValue]];
-#ifdef USE_CRASHLYTICS
             if (error) {
+                GCNLogError(@"Bridge-Eval-Error L:154!!!\nMethod: WKFlushMessageQueue\nResult: %@\nError: %@\nJS: %@",
+                            result ?: @"nil result",
+                            error.localizedDescription ?: @"nil error",
+                            js ?: @"nil js");
+#ifdef USE_CRASHLYTICS
                 [Answers logCustomEventWithName:@"bridge-eval-error"
                                customAttributes:@{@"method": @"didFinishNavigation",
                                                   @"result": result ?: @"nil result",
                                                   @"error": error.localizedDescription ?: @"nil error",
                                                   @"js": js ?: @"nil js"}];
-            }
 #endif
+            }
         }];
     }
     
@@ -216,15 +224,19 @@ didFailNavigation:(WKNavigation *)navigation
 - (NSString*) _evaluateJavascript:(NSString*)javascriptCommand
 {
     [_webView evaluateJavaScript:javascriptCommand completionHandler:^(NSString *result, NSError *error) {
-#ifdef USE_CRASHLYTICS
         if (error) {
+            GCNLogError(@"Bridge-Eval-Error L:228!!!\nMethod: WKFlushMessageQueue\nResult: %@\nError: %@\nJS: %@",
+                        result ?: @"nil result",
+                        error.localizedDescription ?: @"nil error",
+                        javascriptCommand ?: @"nil js");
+#ifdef USE_CRASHLYTICS
             [Answers logCustomEventWithName:@"bridge-eval-error"
                            customAttributes:@{@"method:": @"_evaluateJavascript",
                                               @"result": result ?: @"nil result",
                                               @"error": error.localizedDescription ?: @"nil error",
                                               @"js": javascriptCommand ?: @"nil js"}];
-        }
 #endif
+        }
     }];
     return NULL;
 }
