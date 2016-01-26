@@ -121,7 +121,7 @@
 }
 
 - (void)webView:(WKWebView *)webView didCommitNavigation:(null_unspecified WKNavigation *)navigation {
-    NSLog(@"DID COMMIT NAVIGATION: %@", navigation);
+    GCNLogError(@"DID COMMIT NAVIGATION: URL: %@, %@ %d", webView.URL, navigation, _navigationCount);
     if (_navigationCount) {
 #ifdef USE_CRASHLYTICS
         [Answers logCustomEventWithName:@"bridge-did-commit-navigation"
@@ -133,7 +133,7 @@
 }
 
 - (void)webViewWebContentProcessDidTerminate:(WKWebView *)webView {
-    NSLog(@"CONTENT DID TERMINATE %@", webView.URL);
+    GCNLogError(@"CONTENT DID TERMINATE %@", webView.URL);
 #ifdef USE_CRASHLYTICS
     [Answers logCustomEventWithName:@"bridge-did-terminate"
                    customAttributes:@{@"webview.URL": webView.URL ?: @"nil url"}];
@@ -151,7 +151,7 @@
         [webView evaluateJavaScript:js completionHandler:^(NSString *result, NSError *error) {
             [_base injectJavascriptFile:![result boolValue]];
             if (error) {
-                GCNLogError(@"Bridge-Eval-Error L:154!!!\nMethod: WKFlushMessageQueue\nResult: %@\nError: %@\nJS: %@",
+                GCNLogError(@"Bridge-Eval-Error L:154!!!\nMethod: didFinishNavigation\nResult: %@\nError: %@\nJS: %@",
                             result ?: @"nil result",
                             error.localizedDescription ?: @"nil error",
                             js ?: @"nil js");
@@ -225,7 +225,7 @@ didFailNavigation:(WKNavigation *)navigation
 {
     [_webView evaluateJavaScript:javascriptCommand completionHandler:^(NSString *result, NSError *error) {
         if (error) {
-            GCNLogError(@"Bridge-Eval-Error L:228!!!\nMethod: WKFlushMessageQueue\nResult: %@\nError: %@\nJS: %@",
+            GCNLogError(@"Bridge-Eval-Error L:228!!!\nMethod: _evaluateJavascript\nResult: %@\nError: %@\nJS: %@",
                         result ?: @"nil result",
                         error.localizedDescription ?: @"nil error",
                         javascriptCommand ?: @"nil js");
@@ -240,8 +240,6 @@ didFailNavigation:(WKNavigation *)navigation
     }];
     return NULL;
 }
-
-
 
 @end
 

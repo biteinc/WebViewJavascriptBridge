@@ -213,6 +213,7 @@ static bool logging = false;
     if (data) {
         return [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:nil];
     } else {
+        GCNLogError(@"Empty JS: %@", messageJSON);
 #ifdef USE_CRASHLYTICS
         [Answers logCustomEventWithName:@"empty-js" customAttributes:@{@"message": (messageJSON ?: @"nil message")}];
 #endif
