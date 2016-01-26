@@ -14,6 +14,8 @@
 
 #if defined(supportsWKWebKit)
 
+NSString *const kNotificationWKWebViewBridgeDidDetectFatalError = @"wkWebViewBridge:fatalError";
+
 @implementation WKWebViewJavascriptBridge {
     WKWebView* _webView;
     id _webViewDelegate;
@@ -107,6 +109,9 @@
                         result ?: @"nil result",
                         error.localizedDescription ?: @"nil error",
                         js ?: @"nil js");
+            [[NSNotificationCenter defaultCenter] postNotificationName:kNotificationWKWebViewBridgeDidDetectFatalError
+                                                                object:nil];
+
 #ifdef USE_CRASHLYTICS
             [Answers logCustomEventWithName:@"bridge-eval-error"
                            customAttributes:@{@"method:": @"WKFlushMessageQueue",
@@ -139,6 +144,8 @@
 
 - (void)webViewWebContentProcessDidTerminate:(WKWebView *)webView {
     GCNLogError(@"CONTENT DID TERMINATE %@", [webView.URL absoluteString]);
+    [[NSNotificationCenter defaultCenter] postNotificationName:kNotificationWKWebViewBridgeDidDetectFatalError
+                                                        object:nil];
 #ifdef USE_CRASHLYTICS
     [Answers logCustomEventWithName:@"bridge-did-terminate"
                    customAttributes:@{@"webview.URL": [webView.URL absoluteString] ?: @"nil url",
@@ -161,6 +168,9 @@
                             result ?: @"nil result",
                             error.localizedDescription ?: @"nil error",
                             js ?: @"nil js");
+                [[NSNotificationCenter defaultCenter] postNotificationName:kNotificationWKWebViewBridgeDidDetectFatalError
+                                                                    object:nil];
+
 #ifdef USE_CRASHLYTICS
                 [Answers logCustomEventWithName:@"bridge-eval-error"
                                customAttributes:@{@"method": @"didFinishNavigation",
@@ -236,6 +246,9 @@ didFailNavigation:(WKNavigation *)navigation
                         result ?: @"nil result",
                         error.localizedDescription ?: @"nil error",
                         javascriptCommand ?: @"nil js");
+            [[NSNotificationCenter defaultCenter] postNotificationName:kNotificationWKWebViewBridgeDidDetectFatalError
+                                                                object:nil];
+
 #ifdef USE_CRASHLYTICS
             [Answers logCustomEventWithName:@"bridge-eval-error"
                            customAttributes:@{@"method:": @"_evaluateJavascript",

@@ -15,6 +15,8 @@
 #import "WebViewJavascriptBridgeBase.h"
 #import <WebKit/WebKit.h>
 
+FOUNDATION_EXPORT NSString *const kNotificationWKWebViewBridgeDidDetectFatalError;
+
 @interface WKWebViewJavascriptBridge : NSObject<WKNavigationDelegate, WebViewJavascriptBridgeBaseDelegate>
 
 @property (nonatomic) NSString *jsVersion;
