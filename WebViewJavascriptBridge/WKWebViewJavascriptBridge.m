@@ -20,6 +20,7 @@
     long _uniqueId;
     WebViewJavascriptBridgeBase *_base;
     int _navigationCount;
+    NSNumber *_buildNumber;
 }
 
 /* API
@@ -91,6 +92,8 @@
     _webView.navigationDelegate = self;
     _base = [[WebViewJavascriptBridgeBase alloc] initWithHandler:(WVJBHandler)messageHandler resourceBundle:(NSBundle*)bundle];
     _base.delegate = self;
+
+    _buildNumber = [[NSBundle mainBundle] infoDictionary][@"CFBundleVersion"];
 }
 
 
@@ -109,7 +112,8 @@
                            customAttributes:@{@"method:": @"WKFlushMessageQueue",
                                               @"result": result ?: @"nil result",
                                               @"error": error.localizedDescription ?: @"nil error",
-                                              @"js": js ?: @"nil js"}];
+                                              @"js": js ?: @"nil js",
+                                              @"build": _buildNumber}];
 #endif
         }
     }];
@@ -126,7 +130,8 @@
 #ifdef USE_CRASHLYTICS
         [Answers logCustomEventWithName:@"bridge-did-commit-navigation"
                        customAttributes:@{@"webview.URL": webView.URL ?: @"nil url",
-                                          @"navigation": navigation ?: @"nil navigation"}];
+                                          @"navigation": navigation ?: @"nil navigation",
+                                          @"build": _buildNumber}];
 #endif
     }
     _navigationCount++;
@@ -136,7 +141,8 @@
     GCNLogError(@"CONTENT DID TERMINATE %@", webView.URL);
 #ifdef USE_CRASHLYTICS
     [Answers logCustomEventWithName:@"bridge-did-terminate"
-                   customAttributes:@{@"webview.URL": webView.URL ?: @"nil url"}];
+                   customAttributes:@{@"webview.URL": webView.URL ?: @"nil url",
+                                      @"build": _buildNumber}];
 #endif
 }
 
@@ -160,7 +166,8 @@
                                customAttributes:@{@"method": @"didFinishNavigation",
                                                   @"result": result ?: @"nil result",
                                                   @"error": error.localizedDescription ?: @"nil error",
-                                                  @"js": js ?: @"nil js"}];
+                                                  @"js": js ?: @"nil js",
+                                                  @"build": _buildNumber}];
 #endif
             }
         }];
@@ -234,7 +241,8 @@ didFailNavigation:(WKNavigation *)navigation
                            customAttributes:@{@"method:": @"_evaluateJavascript",
                                               @"result": result ?: @"nil result",
                                               @"error": error.localizedDescription ?: @"nil error",
-                                              @"js": javascriptCommand ?: @"nil js"}];
+                                              @"js": javascriptCommand ?: @"nil js",
+                                              @"build": _buildNumber}];
 #endif
         }
     }];
