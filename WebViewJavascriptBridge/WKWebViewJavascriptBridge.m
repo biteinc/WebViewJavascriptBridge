@@ -125,12 +125,12 @@
 }
 
 - (void)webView:(WKWebView *)webView didCommitNavigation:(null_unspecified WKNavigation *)navigation {
-    GCNLogError(@"DID COMMIT NAVIGATION: URL: %@, %@ %d", webView.URL, navigation, _navigationCount);
+    GCNLogError(@"DID COMMIT NAVIGATION: URL: %@, %@ %d", [webView.URL absoluteString], navigation, _navigationCount);
     if (_navigationCount) {
 #ifdef USE_CRASHLYTICS
         [Answers logCustomEventWithName:@"bridge-did-commit-navigation"
-                       customAttributes:@{@"webview.URL": webView.URL ?: @"nil url",
-                                          @"navigation": navigation ?: @"nil navigation",
+                       customAttributes:@{@"webview.URL": [webView.URL absoluteString] ?: @"nil url",
+                                          @"navigation": [navigation description] ?: @"nil navigation",
                                           @"build": _buildNumber}];
 #endif
     }
@@ -138,10 +138,10 @@
 }
 
 - (void)webViewWebContentProcessDidTerminate:(WKWebView *)webView {
-    GCNLogError(@"CONTENT DID TERMINATE %@", webView.URL);
+    GCNLogError(@"CONTENT DID TERMINATE %@", [webView.URL absoluteString]);
 #ifdef USE_CRASHLYTICS
     [Answers logCustomEventWithName:@"bridge-did-terminate"
-                   customAttributes:@{@"webview.URL": webView.URL ?: @"nil url",
+                   customAttributes:@{@"webview.URL": [webView.URL absoluteString] ?: @"nil url",
                                       @"build": _buildNumber}];
 #endif
 }
