@@ -224,6 +224,37 @@ decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
     }
 }
 
+- (void)webView:(WKWebView *)webView decidePolicyForNavigationResponse:(WKNavigationResponse *)navigationResponse decisionHandler:(void (^)(WKNavigationResponsePolicy))decisionHandler {
+    decisionHandler(WKNavigationResponsePolicyAllow);
+}
+
+- (void)webView:(WKWebView *)webView didFailProvisionalNavigation:(null_unspecified WKNavigation *)navigation
+      withError:(NSError *)error {
+    GCNLogError(@"FAILED provisional navigation!!!\nError: %@\nURL: %@",
+                error.localizedDescription ?: @"nil error",
+                [webView.URL absoluteString] ?: @"nil url");
+    [[NSNotificationCenter defaultCenter] postNotificationName:kNotificationWKWebViewBridgeDidDetectFatalError
+                                                        object:nil];
+
+#ifdef USE_CRASHLYTICS
+    [Answers logCustomEventWithName:@"failed-provisional-navigation"
+                   customAttributes:@{@"error": error.localizedDescription ?: @"nil error",
+                                      @"webview.URL": [webView.URL absoluteString] ?: @"nil url",
+                                      @"build": _buildNumber}];
+#endif
+}
+
+- (void)webView:(WKWebView *)webView
+didReceiveServerRedirectForProvisionalNavigation:(null_unspecified WKNavigation *)navigation {
+    GCNLogError(@"REDIRECT provisional navigation!!!\nURL: %@",
+                [webView.URL absoluteString] ?: @"nil url");
+
+#ifdef USE_CRASHLYTICS
+    [Answers logCustomEventWithName:@"redirect-provisional-navigation"
+                   customAttributes:@{@"webview.URL": [webView.URL absoluteString] ?: @"nil url",
+                                      @"build": _buildNumber}];
+#endif
+}
 
 - (void)webView:(WKWebView *)webView
 didFailNavigation:(WKNavigation *)navigation
