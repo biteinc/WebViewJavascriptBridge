@@ -113,7 +113,7 @@ static bool logging = false;
                 [NSException raise:@"WVJBNoHandlerException" format:@"No handler for message from JS: %@", message];
             }
             
-            handler(message[@"data"], responseCallback);
+            handler(self.delegate, message[@"data"], responseCallback);
         }
     }
 }

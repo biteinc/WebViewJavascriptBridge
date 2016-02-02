@@ -11,7 +11,7 @@
 #define kQueueHasMessage      @"__WVJB_QUEUE_MESSAGE__"
 
 typedef void (^WVJBResponseCallback)(id responseData);
-typedef void (^WVJBHandler)(id data, WVJBResponseCallback responseCallback);
+typedef void (^WVJBHandler)(id bridge, id data, WVJBResponseCallback responseCallback);
 typedef NSDictionary WVJBMessage;
 
 @protocol WebViewJavascriptBridgeBaseDelegate <NSObject>
