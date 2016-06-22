@@ -17,8 +17,8 @@
 NSString *const kNotificationWKWebViewBridgeDidDetectFatalError = @"wkWebViewBridge:fatalError";
 
 @implementation WKWebViewJavascriptBridge {
-    WKWebView* _webView;
-    id _webViewDelegate;
+    __weak WKWebView* _webView;
+    __weak id<WKNavigationDelegate> _webViewDelegate;
     long _uniqueId;
     WebViewJavascriptBridgeBase *_base;
     int _navigationCount;
@@ -30,18 +30,9 @@ NSString *const kNotificationWKWebViewBridgeDidDetectFatalError = @"wkWebViewBri
 
 + (void)enableLogging { [WebViewJavascriptBridgeBase enableLogging]; }
 
-+ (instancetype)bridgeForWebView:(WKWebView*)webView handler:(WVJBHandler)handler {
-    return [self bridgeForWebView:webView webViewDelegate:nil handler:handler];
-}
-
-+ (instancetype)bridgeForWebView:(WKWebView*)webView webViewDelegate:(NSObject<WKNavigationDelegate>*)webViewDelegate handler:(WVJBHandler)messageHandler {
-    return [self bridgeForWebView:webView webViewDelegate:webViewDelegate handler:messageHandler resourceBundle:nil];
-}
-
-+ (instancetype)bridgeForWebView:(WKWebView*)webView webViewDelegate:(NSObject<WKNavigationDelegate>*)webViewDelegate handler:(WVJBHandler)messageHandler resourceBundle:(NSBundle*)bundle
-{
++ (instancetype)bridgeForWebView:(WKWebView*)webView {
     WKWebViewJavascriptBridge* bridge = [[self alloc] init];
-    [bridge _setupInstance:webView webViewDelegate:webViewDelegate handler:messageHandler resourceBundle:bundle];
+    [bridge _setupInstance:webView];
     [bridge reset];
     return bridge;
 }
@@ -74,6 +65,14 @@ NSString *const kNotificationWKWebViewBridgeDidDetectFatalError = @"wkWebViewBri
     [_base reset];
 }
 
+- (void)setWebViewDelegate:(id<WKNavigationDelegate>)webViewDelegate {
+    _webViewDelegate = webViewDelegate;
+}
+
+- (void)disableJavscriptAlertBoxSafetyTimeout {
+    [_base disableJavscriptAlertBoxSafetyTimeout];
+}
+
 /* Internals
  ***********/
 
@@ -88,11 +87,10 @@ NSString *const kNotificationWKWebViewBridgeDidDetectFatalError = @"wkWebViewBri
 /* WKWebView Specific Internals
  ******************************/
 
-- (void) _setupInstance:(WKWebView*)webView webViewDelegate:(id<WKNavigationDelegate>)webViewDelegate handler:(WVJBHandler)messageHandler resourceBundle:(NSBundle*)bundle{
+- (void) _setupInstance:(WKWebView*)webView {
     _webView = webView;
-    _webViewDelegate = webViewDelegate;
     _webView.navigationDelegate = self;
-    _base = [[WebViewJavascriptBridgeBase alloc] initWithHandler:(WVJBHandler)messageHandler resourceBundle:(NSBundle*)bundle];
+    _base = [[WebViewJavascriptBridgeBase alloc] init];
     _base.delegate = self;
 
     _buildNumber = [[NSBundle mainBundle] infoDictionary][@"CFBundleVersion"];
@@ -156,32 +154,6 @@ NSString *const kNotificationWKWebViewBridgeDidDetectFatalError = @"wkWebViewBri
 - (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation
 {
     if (webView != _webView) { return; }
-
-    _base.numRequestsLoading--;
-    
-    if (_base.numRequestsLoading == 0) {
-        NSString *js = [_base webViewJavascriptCheckCommand];
-        [webView evaluateJavaScript:js completionHandler:^(NSString *result, NSError *error) {
-            [_base injectJavascriptFile:![result boolValue]];
-            if (error) {
-                GCNLogError(@"Bridge-Eval-Error L:154!!!\nMethod: didFinishNavigation\nResult: %@\nError: %@\nJS: %@",
-                            result ?: @"nil result",
-                            error.localizedDescription ?: @"nil error",
-                            js ?: @"nil js");
-                [[NSNotificationCenter defaultCenter] postNotificationName:kNotificationWKWebViewBridgeDidDetectFatalError
-                                                                    object:nil];
-
-#ifdef USE_CRASHLYTICS
-                [Answers logCustomEventWithName:@"bridge-eval-error"
-                               customAttributes:@{@"method": @"didFinishNavigation",
-                                                  @"result": result ?: @"nil result",
-                                                  @"error": error.localizedDescription ?: @"nil error",
-                                                  @"js": js ?: @"nil js",
-                                                  @"build": _buildNumber}];
-#endif
-            }
-        }];
-    }
     
     __strong typeof(_webViewDelegate) strongDelegate = _webViewDelegate;
     if (strongDelegate && [strongDelegate respondsToSelector:@selector(webView:didFinishNavigation:)]) {
@@ -189,6 +161,15 @@ NSString *const kNotificationWKWebViewBridgeDidDetectFatalError = @"wkWebViewBri
     }
 }
 
+- (void)webView:(WKWebView *)webView didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition, NSURLCredential *))completionHandler
+{
+    if (webView != _webView) { return; }
+
+    __strong typeof(_webViewDelegate) strongDelegate = _webViewDelegate;
+    if (strongDelegate && [strongDelegate respondsToSelector:@selector(webView:didReceiveAuthenticationChallenge:completionHandler:)]) {
+        [strongDelegate webView:webView didReceiveAuthenticationChallenge:challenge completionHandler:completionHandler];
+    }
+}
 
 - (void)webView:(WKWebView *)webView
 decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction
@@ -198,12 +179,14 @@ decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
     __strong typeof(_webViewDelegate) strongDelegate = _webViewDelegate;
 
     if ([_base isCorrectProcotocolScheme:url]) {
-        if ([_base isCorrectHost:url]) {
+        if ([_base isBridgeLoadedURL:url]) {
+            [_base injectJavascriptFile];
+        } else if ([_base isQueueMessageURL:url]) {
             [self WKFlushMessageQueue];
         } else {
             [_base logUnkownMessage:url];
         }
-        [webView stopLoading];
+        decisionHandler(WKNavigationActionPolicyCancel);
     }
     
     if (strongDelegate && [strongDelegate respondsToSelector:@selector(webView:decidePolicyForNavigationAction:decisionHandler:)]) {
@@ -215,8 +198,6 @@ decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
 
 - (void)webView:(WKWebView *)webView didStartProvisionalNavigation:(WKNavigation *)navigation {
     if (webView != _webView) { return; }
-    
-    _base.numRequestsLoading++;
     
     __strong typeof(_webViewDelegate) strongDelegate = _webViewDelegate;
     if (strongDelegate && [strongDelegate respondsToSelector:@selector(webView:didStartProvisionalNavigation:)]) {
@@ -261,11 +242,18 @@ didFailNavigation:(WKNavigation *)navigation
       withError:(NSError *)error {
     if (webView != _webView) { return; }
     
-    _base.numRequestsLoading--;
-    
     __strong typeof(_webViewDelegate) strongDelegate = _webViewDelegate;
     if (strongDelegate && [strongDelegate respondsToSelector:@selector(webView:didFailNavigation:withError:)]) {
         [strongDelegate webView:webView didFailNavigation:navigation withError:error];
+    }
+}
+
+- (void)webView:(WKWebView *)webView didFailProvisionalNavigation:(WKNavigation *)navigation withError:(NSError *)error {
+    if (webView != _webView) { return; }
+    
+    __strong typeof(_webViewDelegate) strongDelegate = _webViewDelegate;
+    if (strongDelegate && [strongDelegate respondsToSelector:@selector(webView:didFailProvisionalNavigation:withError:)]) {
+        [strongDelegate webView:webView didFailProvisionalNavigation:navigation withError:error];
     }
 }
 
