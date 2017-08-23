@@ -6,11 +6,9 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "GCNData.h"
+#import "GCNGazeboLog.h"
 #import "WebViewJavascriptBridgeBase.h"
-
-#ifdef USE_CRASHLYTICS
-    #import <Crashlytics/Answers.h>
-#endif
 
 @implementation WebViewJavascriptBridgeBase {
     id _webViewDelegate;
@@ -214,9 +212,12 @@ static bool logging = false;
         return [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:nil];
     } else {
         GCNLogError(@"Empty JS: %@", messageJSON);
-#ifdef USE_CRASHLYTICS
-        [Answers logCustomEventWithName:@"empty-js" customAttributes:@{@"message": (messageJSON ?: @"nil message")}];
-#endif
+        GCNGazeboLog *log = [[GCNGazeboLog alloc] initDeviceLogWithEvent:GCNGazeboClientDeviceEventEmptyJS
+                                                              systemCode:0];
+        log.message = messageJSON;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [[GCNData sharedInstance] addLog:log];
+        });
     }
     return nil;
 }

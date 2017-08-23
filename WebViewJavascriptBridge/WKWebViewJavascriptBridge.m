@@ -5,12 +5,9 @@
 //  Copyright (c) 2014 @LokiMeyburg. All rights reserved.
 //
 
-
+#import "GCNData.h"
+#import "GCNGazeboLog.h"
 #import "WKWebViewJavascriptBridge.h"
-
-#ifdef USE_CRASHLYTICS
-    #import <Crashlytics/Answers.h>
-#endif
 
 #if defined(supportsWKWebKit)
 
@@ -22,7 +19,6 @@ NSString *const kNotificationWKWebViewBridgeDidDetectFatalError = @"wkWebViewBri
     long _uniqueId;
     WebViewJavascriptBridgeBase *_base;
     int _navigationCount;
-    NSNumber *_buildNumber;
 }
 
 /* API
@@ -84,6 +80,23 @@ NSString *const kNotificationWKWebViewBridgeDidDetectFatalError = @"wkWebViewBri
     _webView.navigationDelegate = nil;
 }
 
++ (void)addLog:(GCNGazeboLog *)log {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[GCNData sharedInstance] addLog:log];
+    });
+}
+
++ (void)logBridgeEvalErrorWithMethod:(NSString *)method result:(NSString *)result js:(NSString *)js error:(NSError *)error {
+    GCNGazeboLog *log = [[GCNGazeboLog alloc] initDeviceLogWithEvent:GCNGazeboClientDeviceEventBridgeEvalError
+                                                          systemCode:(int)error.code];
+    log.message = [@{@"method:": @"WKFlushMessageQueue",
+                     @"result": result ?: @"nil result",
+                     @"js": js ?: @"nil js"
+                     } description];
+    log.error = error.localizedDescription ?: @"nil error";
+    [self addLog:log];
+}
+
 
 /* WKWebView Specific Internals
  ******************************/
@@ -94,8 +107,6 @@ NSString *const kNotificationWKWebViewBridgeDidDetectFatalError = @"wkWebViewBri
     _webView.navigationDelegate = self;
     _base = [[WebViewJavascriptBridgeBase alloc] initWithHandler:(WVJBHandler)messageHandler resourceBundle:(NSBundle*)bundle];
     _base.delegate = self;
-
-    _buildNumber = [[NSBundle mainBundle] infoDictionary][@"CFBundleVersion"];
 }
 
 
@@ -111,15 +122,7 @@ NSString *const kNotificationWKWebViewBridgeDidDetectFatalError = @"wkWebViewBri
                         js ?: @"nil js");
             [[NSNotificationCenter defaultCenter] postNotificationName:kNotificationWKWebViewBridgeDidDetectFatalError
                                                                 object:nil];
-
-#ifdef USE_CRASHLYTICS
-            [Answers logCustomEventWithName:@"bridge-eval-error"
-                           customAttributes:@{@"method:": @"WKFlushMessageQueue",
-                                              @"result": result ?: @"nil result",
-                                              @"error": error.localizedDescription ?: @"nil error",
-                                              @"js": js ?: @"nil js",
-                                              @"build": _buildNumber}];
-#endif
+            [[self class] logBridgeEvalErrorWithMethod:@"WKFlushMessageQueue" result:result js:js error:error];
         }
     }];
 }
@@ -132,12 +135,12 @@ NSString *const kNotificationWKWebViewBridgeDidDetectFatalError = @"wkWebViewBri
 - (void)webView:(WKWebView *)webView didCommitNavigation:(null_unspecified WKNavigation *)navigation {
     GCNLogError(@"DID COMMIT NAVIGATION: URL: %@, %@ %d", [webView.URL absoluteString], navigation, _navigationCount);
     if (_navigationCount) {
-#ifdef USE_CRASHLYTICS
-        [Answers logCustomEventWithName:@"bridge-did-commit-navigation"
-                       customAttributes:@{@"webview.URL": [webView.URL absoluteString] ?: @"nil url",
-                                          @"navigation": [navigation description] ?: @"nil navigation",
-                                          @"build": _buildNumber}];
-#endif
+        GCNGazeboLog *log = [[GCNGazeboLog alloc] initDeviceLogWithEvent:GCNGazeboClientDeviceEventWebViewDidCommitNavigation
+                                                              systemCode:0];
+        log.message = [@{@"webview.URL": [webView.URL absoluteString] ?: @"nil url",
+                         @"navigation": [navigation description] ?: @"nil navigation"
+                         } description];
+        [[self class] addLog:log];
     }
     _navigationCount++;
 }
@@ -146,11 +149,10 @@ NSString *const kNotificationWKWebViewBridgeDidDetectFatalError = @"wkWebViewBri
     GCNLogError(@"CONTENT DID TERMINATE %@", [webView.URL absoluteString]);
     [[NSNotificationCenter defaultCenter] postNotificationName:kNotificationWKWebViewBridgeDidDetectFatalError
                                                         object:nil];
-#ifdef USE_CRASHLYTICS
-    [Answers logCustomEventWithName:@"bridge-did-terminate"
-                   customAttributes:@{@"webview.URL": [webView.URL absoluteString] ?: @"nil url",
-                                      @"build": _buildNumber}];
-#endif
+    GCNGazeboLog *log = [[GCNGazeboLog alloc] initDeviceLogWithEvent:GCNGazeboClientDeviceEventWebViewDidTerminate
+                                                          systemCode:0];
+    log.message = [@{@"webview.URL": [webView.URL absoluteString] ?: @"nil url"} description];
+    [[self class] addLog:log];
 }
 
 - (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation
@@ -170,15 +172,7 @@ NSString *const kNotificationWKWebViewBridgeDidDetectFatalError = @"wkWebViewBri
                             js ?: @"nil js");
                 [[NSNotificationCenter defaultCenter] postNotificationName:kNotificationWKWebViewBridgeDidDetectFatalError
                                                                     object:nil];
-
-#ifdef USE_CRASHLYTICS
-                [Answers logCustomEventWithName:@"bridge-eval-error"
-                               customAttributes:@{@"method": @"didFinishNavigation",
-                                                  @"result": result ?: @"nil result",
-                                                  @"error": error.localizedDescription ?: @"nil error",
-                                                  @"js": js ?: @"nil js",
-                                                  @"build": _buildNumber}];
-#endif
+                [[self class] logBridgeEvalErrorWithMethod:@"didFinishNavigation" result:result js:js error:error];
             }
         }];
     }
@@ -236,24 +230,21 @@ decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
     [[NSNotificationCenter defaultCenter] postNotificationName:kNotificationWKWebViewBridgeDidDetectFatalError
                                                         object:nil];
 
-#ifdef USE_CRASHLYTICS
-    [Answers logCustomEventWithName:@"failed-provisional-navigation"
-                   customAttributes:@{@"error": error.localizedDescription ?: @"nil error",
-                                      @"webview.URL": [webView.URL absoluteString] ?: @"nil url",
-                                      @"build": _buildNumber}];
-#endif
+    GCNGazeboLog *log = [[GCNGazeboLog alloc] initDeviceLogWithEvent:GCNGazeboClientDeviceEventWebViewFailedProvisionalNavigation
+                                                          systemCode:0];
+    log.message = [@{@"webview.URL": [webView.URL absoluteString] ?: @"nil url"} description];
+    log.error = error.localizedDescription ?: @"nil error";
+    [[self class] addLog:log];
 }
 
 - (void)webView:(WKWebView *)webView
 didReceiveServerRedirectForProvisionalNavigation:(null_unspecified WKNavigation *)navigation {
     GCNLogError(@"REDIRECT provisional navigation!!!\nURL: %@",
                 [webView.URL absoluteString] ?: @"nil url");
-
-#ifdef USE_CRASHLYTICS
-    [Answers logCustomEventWithName:@"redirect-provisional-navigation"
-                   customAttributes:@{@"webview.URL": [webView.URL absoluteString] ?: @"nil url",
-                                      @"build": _buildNumber}];
-#endif
+    GCNGazeboLog *log = [[GCNGazeboLog alloc] initDeviceLogWithEvent:GCNGazeboClientDeviceEventWebViewRedirectProvisionalNavigation
+                                                          systemCode:0];
+    log.message = [@{@"webview.URL": [webView.URL absoluteString] ?: @"nil url"} description];
+    [[self class] addLog:log];
 }
 
 - (void)webView:(WKWebView *)webView
@@ -279,15 +270,7 @@ didFailNavigation:(WKNavigation *)navigation
                         javascriptCommand ?: @"nil js");
             [[NSNotificationCenter defaultCenter] postNotificationName:kNotificationWKWebViewBridgeDidDetectFatalError
                                                                 object:nil];
-
-#ifdef USE_CRASHLYTICS
-            [Answers logCustomEventWithName:@"bridge-eval-error"
-                           customAttributes:@{@"method:": @"_evaluateJavascript",
-                                              @"result": result ?: @"nil result",
-                                              @"error": error.localizedDescription ?: @"nil error",
-                                              @"js": javascriptCommand ?: @"nil js",
-                                              @"build": _buildNumber}];
-#endif
+            [[self class] logBridgeEvalErrorWithMethod:@"_evaluateJavascript" result:result js:javascriptCommand error:error];
         }
     }];
     return NULL;
