@@ -87,8 +87,8 @@ NSString *const kNotificationWKWebViewBridgeDidDetectFatalError = @"wkWebViewBri
 }
 
 + (void)logBridgeEvalErrorWithMethod:(NSString *)method result:(NSString *)result js:(NSString *)js error:(NSError *)error {
-    GCNGazeboLog *log = [[GCNGazeboLog alloc] initDeviceLogWithEvent:GCNGazeboClientDeviceEventBridgeEvalError
-                                                          systemCode:(int)error.code];
+    GCNGazeboLog *log = [GCNGazeboLog deviceLogWithEvent:GCNGazeboClientDeviceEventBridgeEvalError
+                                              systemCode:(int)error.code];
     log.message = [@{@"method:": @"WKFlushMessageQueue",
                      @"result": result ?: @"nil result",
                      @"js": js ?: @"nil js"
@@ -135,8 +135,8 @@ NSString *const kNotificationWKWebViewBridgeDidDetectFatalError = @"wkWebViewBri
 - (void)webView:(WKWebView *)webView didCommitNavigation:(null_unspecified WKNavigation *)navigation {
     GCNLogError(@"DID COMMIT NAVIGATION: URL: %@, %@ %d", [webView.URL absoluteString], navigation, _navigationCount);
     if (_navigationCount) {
-        GCNGazeboLog *log = [[GCNGazeboLog alloc] initDeviceLogWithEvent:GCNGazeboClientDeviceEventWebViewDidCommitNavigation
-                                                              systemCode:0];
+        GCNGazeboLog *log = [GCNGazeboLog deviceLogWithEvent:GCNGazeboClientDeviceEventWebViewDidCommitNavigation
+                                                  systemCode:0];
         log.message = [@{@"webview.URL": [webView.URL absoluteString] ?: @"nil url",
                          @"navigation": [navigation description] ?: @"nil navigation"
                          } description];
@@ -149,8 +149,7 @@ NSString *const kNotificationWKWebViewBridgeDidDetectFatalError = @"wkWebViewBri
     GCNLogError(@"CONTENT DID TERMINATE %@", [webView.URL absoluteString]);
     [[NSNotificationCenter defaultCenter] postNotificationName:kNotificationWKWebViewBridgeDidDetectFatalError
                                                         object:nil];
-    GCNGazeboLog *log = [[GCNGazeboLog alloc] initDeviceLogWithEvent:GCNGazeboClientDeviceEventWebViewDidTerminate
-                                                          systemCode:0];
+    GCNGazeboLog *log = [GCNGazeboLog deviceLogWithEvent:GCNGazeboClientDeviceEventWebViewDidTerminate systemCode:0];
     log.message = [@{@"webview.URL": [webView.URL absoluteString] ?: @"nil url"} description];
     [[self class] addLog:log];
 }
@@ -230,8 +229,8 @@ decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
     [[NSNotificationCenter defaultCenter] postNotificationName:kNotificationWKWebViewBridgeDidDetectFatalError
                                                         object:nil];
 
-    GCNGazeboLog *log = [[GCNGazeboLog alloc] initDeviceLogWithEvent:GCNGazeboClientDeviceEventWebViewFailedProvisionalNavigation
-                                                          systemCode:0];
+    GCNGazeboLog *log = [GCNGazeboLog deviceLogWithEvent:GCNGazeboClientDeviceEventWebViewFailedProvisionalNavigation
+                                              systemCode:0];
     log.message = [@{@"webview.URL": [webView.URL absoluteString] ?: @"nil url"} description];
     log.error = error.localizedDescription ?: @"nil error";
     [[self class] addLog:log];
@@ -241,8 +240,8 @@ decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
 didReceiveServerRedirectForProvisionalNavigation:(null_unspecified WKNavigation *)navigation {
     GCNLogError(@"REDIRECT provisional navigation!!!\nURL: %@",
                 [webView.URL absoluteString] ?: @"nil url");
-    GCNGazeboLog *log = [[GCNGazeboLog alloc] initDeviceLogWithEvent:GCNGazeboClientDeviceEventWebViewRedirectProvisionalNavigation
-                                                          systemCode:0];
+    GCNGazeboLog *log = [GCNGazeboLog deviceLogWithEvent:GCNGazeboClientDeviceEventWebViewRedirectProvisionalNavigation
+                                              systemCode:0];
     log.message = [@{@"webview.URL": [webView.URL absoluteString] ?: @"nil url"} description];
     [[self class] addLog:log];
 }

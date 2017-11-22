@@ -212,8 +212,7 @@ static bool logging = false;
         return [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:nil];
     } else {
         GCNLogError(@"Empty JS: %@", messageJSON);
-        GCNGazeboLog *log = [[GCNGazeboLog alloc] initDeviceLogWithEvent:GCNGazeboClientDeviceEventEmptyJS
-                                                              systemCode:0];
+        GCNGazeboLog *log = [GCNGazeboLog deviceLogWithEvent:GCNGazeboClientDeviceEventEmptyJS systemCode:0];
         log.message = messageJSON;
         dispatch_async(dispatch_get_main_queue(), ^{
             [[GCNData sharedInstance] addLog:log];
