@@ -114,7 +114,7 @@ NSString *const kNotificationWKWebViewBridgeDidDetectFatalError = @"wkWebViewBri
     NSLog(@"WKFlushMessageQueue");
     NSString *js = [_base webViewJavascriptFetchQueyCommand];
     [_webView evaluateJavaScript:js completionHandler:^(NSString* result, NSError* error) {
-        [_base flushMessageQueue:result];
+        [self->_base flushMessageQueue:result];
         if (error) {
             GCNLogError(@"Bridge-Eval-Error L:103!!!\nMethod: WKFlushMessageQueue\nResult: %@\nError: %@\nJS: %@",
                         result ?: @"nil result",
@@ -163,7 +163,7 @@ NSString *const kNotificationWKWebViewBridgeDidDetectFatalError = @"wkWebViewBri
     if (_base.numRequestsLoading == 0) {
         NSString *js = [_base webViewJavascriptCheckCommand];
         [webView evaluateJavaScript:js completionHandler:^(NSString *result, NSError *error) {
-            [_base injectJavascriptFile:![result boolValue]];
+            [self->_base injectJavascriptFile:![result boolValue]];
             if (error) {
                 GCNLogError(@"Bridge-Eval-Error L:154!!!\nMethod: didFinishNavigation\nResult: %@\nError: %@\nJS: %@",
                             result ?: @"nil result",
