@@ -215,7 +215,7 @@ static bool logging = false;
         GCNGazeboLog *log = [GCNGazeboLog deviceLogWithEvent:GCNGazeboClientDeviceEventEmptyJS systemCode:0];
         log.message = messageJSON;
         dispatch_async(dispatch_get_main_queue(), ^{
-            [[GCNData sharedInstance] addLog:log];
+            [[GCNData locationRepo] addLog:log];
         });
     }
     return nil;

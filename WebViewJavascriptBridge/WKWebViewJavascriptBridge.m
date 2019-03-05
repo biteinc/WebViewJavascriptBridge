@@ -82,7 +82,7 @@ NSString *const kNotificationWKWebViewBridgeDidDetectFatalError = @"wkWebViewBri
 
 + (void)addLog:(GCNGazeboLog *)log {
     dispatch_async(dispatch_get_main_queue(), ^{
-        [[GCNData sharedInstance] addLog:log];
+        [[GCNData locationRepo] addLog:log];
     });
 }
 
