@@ -87,7 +87,7 @@ NSString *const kNotificationWKWebViewBridgeDidDetectFatalError = @"wkWebViewBri
 }
 
 + (void)logBridgeEvalErrorWithMethod:(NSString *)method result:(NSString *)result js:(NSString *)js error:(NSError *)error {
-    GCNGazeboLog *log = [GCNGazeboLog deviceLogWithEvent:GCNGazeboClientDeviceEventBridgeEvalError
+    GCNGazeboLog *log = [GCNGazeboLog deviceLogWithEvent:GCNDeviceEvent_BridgeEvalError
                                               systemCode:(int)error.code];
     log.message = [@{@"method:": @"WKFlushMessageQueue",
                      @"result": result ?: @"nil result",
@@ -135,7 +135,7 @@ NSString *const kNotificationWKWebViewBridgeDidDetectFatalError = @"wkWebViewBri
 - (void)webView:(WKWebView *)webView didCommitNavigation:(null_unspecified WKNavigation *)navigation {
     GCNLogError(@"DID COMMIT NAVIGATION: URL: %@, %@ %d", [webView.URL absoluteString], navigation, _navigationCount);
     if (_navigationCount) {
-        GCNGazeboLog *log = [GCNGazeboLog deviceLogWithEvent:GCNGazeboClientDeviceEventWebViewDidCommitNavigation
+        GCNGazeboLog *log = [GCNGazeboLog deviceLogWithEvent:GCNDeviceEvent_WebViewDidCommitNavigation
                                                   systemCode:0];
         log.message = [@{@"webview.URL": [webView.URL absoluteString] ?: @"nil url",
                          @"navigation": [navigation description] ?: @"nil navigation"
@@ -149,7 +149,7 @@ NSString *const kNotificationWKWebViewBridgeDidDetectFatalError = @"wkWebViewBri
     GCNLogError(@"CONTENT DID TERMINATE %@", [webView.URL absoluteString]);
     [[NSNotificationCenter defaultCenter] postNotificationName:kNotificationWKWebViewBridgeDidDetectFatalError
                                                         object:nil];
-    GCNGazeboLog *log = [GCNGazeboLog deviceLogWithEvent:GCNGazeboClientDeviceEventWebViewDidTerminate systemCode:0];
+    GCNGazeboLog *log = [GCNGazeboLog deviceLogWithEvent:GCNDeviceEvent_WebViewDidTerminate systemCode:0];
     log.message = [@{@"webview.URL": [webView.URL absoluteString] ?: @"nil url"} description];
     [[self class] addLog:log];
 }
@@ -229,7 +229,7 @@ decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
     [[NSNotificationCenter defaultCenter] postNotificationName:kNotificationWKWebViewBridgeDidDetectFatalError
                                                         object:nil];
 
-    GCNGazeboLog *log = [GCNGazeboLog deviceLogWithEvent:GCNGazeboClientDeviceEventWebViewFailedProvisionalNavigation
+    GCNGazeboLog *log = [GCNGazeboLog deviceLogWithEvent:GCNDeviceEvent_WebViewFailedProvisionalNavigation
                                               systemCode:0];
     log.message = [@{@"webview.URL": [webView.URL absoluteString] ?: @"nil url"} description];
     log.error = error.localizedDescription ?: @"nil error";
@@ -240,7 +240,7 @@ decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
 didReceiveServerRedirectForProvisionalNavigation:(null_unspecified WKNavigation *)navigation {
     GCNLogError(@"REDIRECT provisional navigation!!!\nURL: %@",
                 [webView.URL absoluteString] ?: @"nil url");
-    GCNGazeboLog *log = [GCNGazeboLog deviceLogWithEvent:GCNGazeboClientDeviceEventWebViewRedirectProvisionalNavigation
+    GCNGazeboLog *log = [GCNGazeboLog deviceLogWithEvent:GCNDeviceEvent_WebViewRedirectProvisionalNavigation
                                               systemCode:0];
     log.message = [@{@"webview.URL": [webView.URL absoluteString] ?: @"nil url"} description];
     [[self class] addLog:log];
