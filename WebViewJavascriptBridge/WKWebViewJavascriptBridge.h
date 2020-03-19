@@ -19,7 +19,7 @@ FOUNDATION_EXPORT NSString *const kNotificationWKWebViewBridgeDidDetectFatalErro
 
 @interface WKWebViewJavascriptBridge : NSObject<WKNavigationDelegate, WebViewJavascriptBridgeBaseDelegate>
 
-@property (nonatomic) NSString *jsVersion;
+@property (nonatomic) NSString *gcnVersion;
 
 + (instancetype)bridgeForWebView:(WKWebView*)webView handler:(WVJBHandler)handler;
 + (instancetype)bridgeForWebView:(WKWebView*)webView webViewDelegate:(NSObject<WKNavigationDelegate>*)webViewDelegate handler:(WVJBHandler)handler;

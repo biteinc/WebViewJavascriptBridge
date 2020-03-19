@@ -127,8 +127,8 @@ NSString *const kNotificationWKWebViewBridgeDidDetectFatalError = @"wkWebViewBri
     }];
 }
 
-- (void)setJsVersion:(NSString *)jsVersion {
-    _jsVersion = jsVersion;
+- (void)setGcnVersion:(NSString *)gcnVersion {
+    _gcnVersion = gcnVersion;
     _navigationCount = 0;
 }
 
